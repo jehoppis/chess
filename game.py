@@ -118,41 +118,74 @@ class Game:
                 # values are never used. They are only defined here to note the format.
 
     # Constructs a table to show what the board looks like.
-    def visualize(self):
-        def abbreviate(piece):
+    def visualize(self, player="black"):
+        def abbreviate(piece, color):
             if not piece:
                 return ""
-            elif piece == "pawn":
-                return "p"
-            elif piece == "rook":
-                return "r"
-            elif piece == "knight":
-                return "kn"
-            elif piece == "bishop":
-                return "b"
-            elif piece == "queen":
-                return "q"
-            elif piece == "king":
-                return "K"
+            elif piece == "pawn" and color == "white":
+                return "W-p"
+            elif piece == "pawn" and color == "black":
+                return "B-p"
+            elif piece == "rook" and color == "white":
+                return "W-r"
+            elif piece == "rook" and color == "black":
+                return "B-r"
+            elif piece == "knight" and color == "white":
+                return "W-n"
+            elif piece == "knight" and color == "black":
+                return "B-n"
+            elif piece == "bishop" and color == "white":
+                return "W-b"
+            elif piece == "bishop" and color == "black":
+                return "B-b"
+            elif piece == "queen" and color == "white":
+                return "W-q"
+            elif piece == "queen" and color == "black":
+                return "B-q"
+            elif piece == "king" and color == "white":
+                return "W-K"
+            elif piece == "king" and color == "black":
+                return "B-K"
 
-        table = [
+        table = dict()
+        table["white"] = [
             [
                 (
-                    (self.squares[self.columns[j], i]["player"] == "black") * "B-"
-                    + (self.squares[self.columns[j], i]["player"] == "white") * "W-"
-                    + ((i + j) % 2)
+                    ((i + j) % 2)
                     * (not self.squares[self.columns[j], i]["player"])
-                    * "--"
+                    * "-"
                     + ((i + j - 1) % 2)
                     * (not self.squares[self.columns[j], i]["player"])
-                    * "----"
-                    + abbreviate(self.squares[self.columns[j], i]["occupied"])
+                    * "-----"
+                    + abbreviate(
+                        self.squares[self.columns[j], i]["occupied"],
+                        self.squares[self.columns[j], i]["player"],
+                    )
                 )
                 for j in range(len(self.columns))
             ]
             for i in range(8, 0, -1)
         ]
-        print(tabulate(table, headers=self.columns, showindex=list(range(8, 0, -1))))
+        table["black"] = list(reversed([list(reversed(row)) for row in table["white"]]))
+
+        if player == "white":
+            print(
+                tabulate(
+                    table["white"],
+                    headers=self.columns,
+                    showindex=list(range(8, 0, -1)),
+                    stralign="center",
+                )
+            )
+        if player == "black":
+            print(
+                tabulate(
+                    table["black"],
+                    headers=list(reversed(self.columns)),
+                    showindex=list(range(1, 9)),
+                    stralign="center",
+                )
+            )
 
     # Assumes current_pos and end_pos are in the right format. Checks to see if moving from current_pos to end_pos
     # is a legal move for player 'color' to make (excluding castling and ignoring check restrictions).
@@ -891,17 +924,27 @@ class Game:
                     [
                         type(current_pos) == str,
                         len(current_pos) == 2,
-                        current_pos[0] in self.columns,
-                        int(current_pos[1]) in self.rows,
-                        color
-                        == self.squares[(current_pos[0], int(current_pos[1]))][
-                            "player"
-                        ],
                     ]
                 ):
-                    print("Input received.")
-                    break
-                elif True:
+                    if all(
+                        [
+                            current_pos[0] in self.columns,
+                            int(current_pos[1]) in self.rows,
+                            color
+                            == self.squares[(current_pos[0], int(current_pos[1]))][
+                                "player"
+                            ],
+                        ]
+                    ):
+                        print("Input received.")
+                        break
+                    else:
+                        print(
+                            "You either typed something that wasn't a square, that square is\n"
+                            + "unoccupied, or you do not own that piece."
+                        )
+                        continue
+                else:
                     print(
                         "You either typed something that wasn't a square, that square is\n"
                         + "unoccupied, or you do not own that piece."
@@ -926,28 +969,25 @@ class Game:
                     continue
                 elif end_pos == "back":
                     break
-                elif not all(
+                if all(
                     [
                         type(end_pos) == str,
                         len(end_pos) == 2,
-                        end_pos[0] in self.columns,
-                        int(end_pos[1]) in self.rows,
                     ]
                 ):
-                    print("You typed something that wasn't a valid square.")
-                    self.visualize()
-                    continue
-                elif all(
-                    [
-                        type(end_pos) == str,
-                        len(end_pos) == 2,
-                        end_pos[0] in self.columns,
-                        int(end_pos[1]) in self.rows,
-                        self.is_legal(current_pos, end_pos, color)
-                        or self.is_legal_castle(current_pos, end_pos, color),
-                    ]
-                ):
-                    break
+                    if not all(
+                        [
+                            end_pos[0] in self.columns,
+                            int(end_pos[1]) in self.rows,
+                            self.is_legal(current_pos, end_pos, color)
+                            or self.is_legal_castle(current_pos, end_pos, color),
+                        ]
+                    ):
+                        print("You typed something that wasn't a valid square.")
+                        self.visualize(player=color)
+                        continue
+                    else:
+                        break
                 elif all(
                     [
                         type(end_pos) == str,
@@ -959,170 +999,238 @@ class Game:
                     ]
                 ):
                     print("That is not a legal move.")
-                    self.visualize()
+                    self.visualize(player=color)
                     break
-
-            if self.is_legal(current_pos, end_pos, color):
-                temp = self.is_threat(current_pos, end_pos, color)
-                if temp[0]:
-                    i = temp[1]
-                    j = temp[2]
-                    print(
-                        "That move would place white in check from "
-                        + str(self.squares[(j, i)]["occupied"])
-                        + " at "
-                        + str(j)
-                        + str(i)
-                        + "."
-                    )
-                elif not temp[0]:
-                    cur_col_index = self.columns.index(current_pos[0])
-                    end_col_index = self.columns.index(end_pos[0])
-                    if (
-                        self.squares[(current_pos[0], int(current_pos[1]))]["occupied"]
-                        == "king"
-                    ):
-                        if color == "white":
-                            self.white_king = (end_pos[0], int(end_pos[1]))
-                        elif color == "black":
-                            self.black_king = (end_pos[0], int(end_pos[1]))
-                    # Keeping track of game progress for the fifty move rule
-                    if any(
-                        [
-                            self.squares[(end_pos[0], int(end_pos[1]))]["occupied"],
+            if end_pos != "back":
+                if self.is_legal(current_pos, end_pos, color):
+                    temp = self.is_threat(current_pos, end_pos, color)
+                    if temp[0]:
+                        i = temp[1]
+                        j = temp[2]
+                        print(
+                            "That move would place white in check from "
+                            + str(self.squares[(j, i)]["occupied"])
+                            + " at "
+                            + str(j)
+                            + str(i)
+                            + "."
+                        )
+                    elif not temp[0]:
+                        cur_col_index = self.columns.index(current_pos[0])
+                        end_col_index = self.columns.index(end_pos[0])
+                        if (
                             self.squares[(current_pos[0], int(current_pos[1]))][
                                 "occupied"
                             ]
-                            == "pawn",
-                        ]
-                    ):
-                        self.fifty = self.turn_count
-                    # Flagging for en passant
-                    if all(
-                        [
-                            self.squares[(current_pos[0], int(current_pos[1]))][
-                                "player"
-                            ]
-                            == "white",
-                            self.squares[(current_pos[0], int(current_pos[1]))][
-                                "occupied"
-                            ]
-                            == "pawn",
-                        ]
-                    ):
-                        if int(current_pos[1]) == 2:
-                            if all(
-                                [
-                                    not self.squares[(current_pos[0], 3)]["occupied"],
-                                    not self.squares[(current_pos[0], 4)]["occupied"],
-                                    int(end_pos[1]) == 4,
-                                ]
-                            ):
-                                if cur_col_index > 0:
-                                    # noinspection PyTypeChecker
-                                    self.squares[(self.columns[cur_col_index - 1], 4)][
-                                        "en passant"
-                                    ] = [
-                                        self.turn_count + 1,
-                                        self.columns[cur_col_index],
-                                    ]
-                                if cur_col_index < 7:
-                                    # noinspection PyTypeChecker
-                                    self.squares[(self.columns[cur_col_index + 1], 4)][
-                                        "en passant"
-                                    ] = [
-                                        self.turn_count + 1,
-                                        self.columns[cur_col_index],
-                                    ]
-                        elif all(
+                            == "king"
+                        ):
+                            if color == "white":
+                                self.white_king = (end_pos[0], int(end_pos[1]))
+                            elif color == "black":
+                                self.black_king = (end_pos[0], int(end_pos[1]))
+                        # Keeping track of game progress for the fifty move rule
+                        if any(
                             [
-                                not self.squares[(end_pos[0], int(end_pos[1]))][
+                                self.squares[(end_pos[0], int(end_pos[1]))]["occupied"],
+                                self.squares[(current_pos[0], int(current_pos[1]))][
                                     "occupied"
-                                ],
-                                cur_col_index != end_col_index,
+                                ]
+                                == "pawn",
                             ]
                         ):
-                            self.squares[(end_pos[0], int(current_pos[1]))][
-                                "occupied"
-                            ] = False
-                            self.squares[(end_pos[0], int(current_pos[1]))][
-                                "player"
-                            ] = False
-                    if all(
-                        [
-                            self.squares[(current_pos[0], int(current_pos[1]))][
-                                "player"
-                            ]
-                            == "black",
-                            self.squares[(current_pos[0], int(current_pos[1]))][
-                                "occupied"
-                            ]
-                            == "pawn",
-                        ]
-                    ):
-                        if int(current_pos[1]) == 7:
-                            if all(
-                                [
-                                    not self.squares[(current_pos[0], 6)]["occupied"],
-                                    not self.squares[(current_pos[0], 5)]["occupied"],
-                                    int(end_pos[1]) == 5,
-                                ]
-                            ):
-                                if cur_col_index > 0:
-                                    # noinspection PyTypeChecker
-                                    self.squares[(self.columns[cur_col_index - 1], 5)][
-                                        "en passant"
-                                    ] = [
-                                        self.turn_count + 1,
-                                        self.columns[cur_col_index],
-                                    ]
-                                if cur_col_index < 7:
-                                    # noinspection PyTypeChecker
-                                    self.squares[(self.columns[cur_col_index + 1], 5)][
-                                        "en passant"
-                                    ] = [
-                                        self.turn_count + 1,
-                                        self.columns[cur_col_index],
-                                    ]
-                        elif all(
+                            self.fifty = self.turn_count
+                        # Flagging for en passant
+                        if all(
                             [
-                                not self.squares[(end_pos[0], int(end_pos[1]))][
+                                self.squares[(current_pos[0], int(current_pos[1]))][
+                                    "player"
+                                ]
+                                == "white",
+                                self.squares[(current_pos[0], int(current_pos[1]))][
                                     "occupied"
-                                ],
-                                cur_col_index != end_col_index,
+                                ]
+                                == "pawn",
                             ]
                         ):
-                            self.squares[(end_pos[0], int(current_pos[1]))][
-                                "occupied"
+                            if int(current_pos[1]) == 2:
+                                if all(
+                                    [
+                                        not self.squares[(current_pos[0], 3)][
+                                            "occupied"
+                                        ],
+                                        not self.squares[(current_pos[0], 4)][
+                                            "occupied"
+                                        ],
+                                        int(end_pos[1]) == 4,
+                                    ]
+                                ):
+                                    if cur_col_index > 0:
+                                        # noinspection PyTypeChecker
+                                        self.squares[
+                                            (self.columns[cur_col_index - 1], 4)
+                                        ]["en passant"] = [
+                                            self.turn_count + 1,
+                                            self.columns[cur_col_index],
+                                        ]
+                                    if cur_col_index < 7:
+                                        # noinspection PyTypeChecker
+                                        self.squares[
+                                            (self.columns[cur_col_index + 1], 4)
+                                        ]["en passant"] = [
+                                            self.turn_count + 1,
+                                            self.columns[cur_col_index],
+                                        ]
+                            elif all(
+                                [
+                                    not self.squares[(end_pos[0], int(end_pos[1]))][
+                                        "occupied"
+                                    ],
+                                    cur_col_index != end_col_index,
+                                ]
+                            ):
+                                self.squares[(end_pos[0], int(current_pos[1]))][
+                                    "occupied"
+                                ] = False
+                                self.squares[(end_pos[0], int(current_pos[1]))][
+                                    "player"
+                                ] = False
+                        if all(
+                            [
+                                self.squares[(current_pos[0], int(current_pos[1]))][
+                                    "player"
+                                ]
+                                == "black",
+                                self.squares[(current_pos[0], int(current_pos[1]))][
+                                    "occupied"
+                                ]
+                                == "pawn",
+                            ]
+                        ):
+                            if int(current_pos[1]) == 7:
+                                if all(
+                                    [
+                                        not self.squares[(current_pos[0], 6)][
+                                            "occupied"
+                                        ],
+                                        not self.squares[(current_pos[0], 5)][
+                                            "occupied"
+                                        ],
+                                        int(end_pos[1]) == 5,
+                                    ]
+                                ):
+                                    if cur_col_index > 0:
+                                        # noinspection PyTypeChecker
+                                        self.squares[
+                                            (self.columns[cur_col_index - 1], 5)
+                                        ]["en passant"] = [
+                                            self.turn_count + 1,
+                                            self.columns[cur_col_index],
+                                        ]
+                                    if cur_col_index < 7:
+                                        # noinspection PyTypeChecker
+                                        self.squares[
+                                            (self.columns[cur_col_index + 1], 5)
+                                        ]["en passant"] = [
+                                            self.turn_count + 1,
+                                            self.columns[cur_col_index],
+                                        ]
+                            elif all(
+                                [
+                                    not self.squares[(end_pos[0], int(end_pos[1]))][
+                                        "occupied"
+                                    ],
+                                    cur_col_index != end_col_index,
+                                ]
+                            ):
+                                self.squares[(end_pos[0], int(current_pos[1]))][
+                                    "occupied"
+                                ] = False
+                                self.squares[(end_pos[0], int(current_pos[1]))][
+                                    "player"
+                                ] = False
+                        # Making sure a rook that's moved won't be able to castle.
+                        if all(
+                            [
+                                self.squares[(current_pos[0], int(current_pos[1]))][
+                                    "occupied"
+                                ]
+                                == "rook",
+                                (current_pos[0], int(current_pos[1]))
+                                in [
+                                    ("a", 1),
+                                    ("a", 8),
+                                    ("h", 1),
+                                    ("h", 8),
+                                ],
+                            ]
+                        ):
+                            self.squares[(current_pos[0], int(current_pos[1]))][
+                                "castle"
                             ] = False
-                            self.squares[(end_pos[0], int(current_pos[1]))][
-                                "player"
-                            ] = False
-                    # Making sure a rook that's moved won't be able to castle.
-                    if all(
-                        [
+                        self.history[self.turn_count] = (
                             self.squares[(current_pos[0], int(current_pos[1]))][
                                 "occupied"
-                            ]
-                            == "rook",
-                            (current_pos[0], int(current_pos[1]))
-                            in [
-                                ("a", 1),
-                                ("a", 8),
-                                ("h", 1),
-                                ("h", 8),
                             ],
+                            (current_pos[0], int(current_pos[1])),
+                            (end_pos[0], int(end_pos[1])),
+                        )
+
+                        self.squares[(end_pos[0], int(end_pos[1]))][
+                            "player"
+                        ] = self.squares[(current_pos[0], int(current_pos[1]))][
+                            "player"
                         ]
-                    ):
+                        self.squares[(end_pos[0], int(end_pos[1]))][
+                            "occupied"
+                        ] = self.squares[(current_pos[0], int(current_pos[1]))][
+                            "occupied"
+                        ]
                         self.squares[(current_pos[0], int(current_pos[1]))][
-                            "castle"
+                            "player"
                         ] = False
+                        self.squares[(current_pos[0], int(current_pos[1]))][
+                            "occupied"
+                        ] = False
+                        print("Move completed.")
+                        self.turn_count += 1
+                        if all(
+                            [
+                                self.squares[(end_pos[0], int(end_pos[1]))]["occupied"]
+                                == "pawn",
+                                int(end_pos[1]) in [1, 8],
+                            ]
+                        ):
+                            while True:
+                                promo = input(
+                                    "What piece would you like to promote your pawn to? Type\n"
+                                    "queen, rook, knight, or bishop.\n"
+                                    "Input:"
+                                )
+                                if promo not in ["queen", "rook", "knight", "bishop"]:
+                                    print("Invalid selection. Try again.")
+                                    continue
+                                else:
+                                    # noinspection PyTypeChecker
+                                    self.squares[(end_pos[0], int(end_pos[1]))][
+                                        "occupied"
+                                    ] = promo
+                                    break
+                        if color == "white":
+                            self.visualize(player="black")
+                        else:
+                            self.visualize(player="white")
+                        break
+
+                elif self.is_legal_castle(current_pos, end_pos, color):
+                    if color == "white":
+                        self.white_king = (end_pos[0], int(end_pos[1]))
+                    elif color == "black":
+                        self.black_king = (end_pos[0], int(end_pos[1]))
                     self.history[self.turn_count] = (
                         self.squares[(current_pos[0], int(current_pos[1]))]["occupied"],
                         (current_pos[0], int(current_pos[1])),
                         (end_pos[0], int(end_pos[1])),
                     )
-
                     self.squares[(end_pos[0], int(end_pos[1]))][
                         "player"
                     ] = self.squares[(current_pos[0], int(current_pos[1]))]["player"]
@@ -1135,76 +1243,36 @@ class Game:
                     self.squares[(current_pos[0], int(current_pos[1]))][
                         "occupied"
                     ] = False
+                    if (end_pos[0], int(end_pos[1])) == ("c", 1):
+                        self.squares[("a", 1)]["occupied"] = False
+                        self.squares[("a", 1)]["player"] = False
+                        self.squares[("d", 1)]["occupied"] = "rook"
+                        self.squares[("d", 1)]["player"] = color
+                    if (end_pos[0], int(end_pos[1])) == ("g", 1):
+                        self.squares[("h", 1)]["occupied"] = False
+                        self.squares[("h", 1)]["player"] = False
+                        self.squares[("f", 1)]["occupied"] = "rook"
+                        self.squares[("f", 1)]["player"] = color
+                    if (end_pos[0], int(end_pos[1])) == ("c", 8):
+                        self.squares[("a", 8)]["occupied"] = False
+                        self.squares[("a", 8)]["player"] = False
+                        self.squares[("d", 8)]["occupied"] = "rook"
+                        self.squares[("d", 8)]["player"] = color
+                    if (end_pos[0], int(end_pos[1])) == ("g", 8):
+                        self.squares[("h", 8)]["occupied"] = False
+                        self.squares[("h", 8)]["player"] = False
+                        self.squares[("f", 8)]["occupied"] = "rook"
+                        self.squares[("f", 8)]["player"] = color
                     print("Move completed.")
                     self.turn_count += 1
-                    if all(
-                        [
-                            self.squares[(end_pos[0], int(end_pos[1]))]["occupied"]
-                            == "pawn",
-                            int(end_pos[1]) in [1, 8],
-                        ]
-                    ):
-                        while True:
-                            promo = input(
-                                "What piece would you like to promote your pawn to? Type\n"
-                                "queen, rook, knight, or bishop.\n"
-                                "Input:"
-                            )
-                            if promo not in ["queen", "rook", "knight", "bishop"]:
-                                print("Invalid selection. Try again.")
-                                continue
-                            else:
-                                # noinspection PyTypeChecker
-                                self.squares[(end_pos[0], int(end_pos[1]))][
-                                    "occupied"
-                                ] = promo
-                                break
-                    self.visualize()
+                    if color == "white":
+                        self.visualize(player="black")
+                    else:
+                        self.visualize(player="white")
                     break
-
-            elif self.is_legal_castle(current_pos, end_pos, color):
-                if color == "white":
-                    self.white_king = (end_pos[0], int(end_pos[1]))
-                elif color == "black":
-                    self.black_king = (end_pos[0], int(end_pos[1]))
-                self.history[self.turn_count] = (
-                    self.squares[(current_pos[0], int(current_pos[1]))]["occupied"],
-                    (current_pos[0], int(current_pos[1])),
-                    (end_pos[0], int(end_pos[1])),
-                )
-                self.squares[(end_pos[0], int(end_pos[1]))]["player"] = self.squares[
-                    (current_pos[0], int(current_pos[1]))
-                ]["player"]
-                self.squares[(end_pos[0], int(end_pos[1]))]["occupied"] = self.squares[
-                    (current_pos[0], int(current_pos[1]))
-                ]["occupied"]
-                self.squares[(current_pos[0], int(current_pos[1]))]["player"] = False
-                self.squares[(current_pos[0], int(current_pos[1]))]["occupied"] = False
-                if (end_pos[0], int(end_pos[1])) == ("c", 1):
-                    self.squares[("a", 1)]["occupied"] = False
-                    self.squares[("a", 1)]["player"] = False
-                    self.squares[("d", 1)]["occupied"] = "rook"
-                    self.squares[("d", 1)]["player"] = color
-                if (end_pos[0], int(end_pos[1])) == ("g", 1):
-                    self.squares[("h", 1)]["occupied"] = False
-                    self.squares[("h", 1)]["player"] = False
-                    self.squares[("f", 1)]["occupied"] = "rook"
-                    self.squares[("f", 1)]["player"] = color
-                if (end_pos[0], int(end_pos[1])) == ("c", 8):
-                    self.squares[("a", 8)]["occupied"] = False
-                    self.squares[("a", 8)]["player"] = False
-                    self.squares[("d", 8)]["occupied"] = "rook"
-                    self.squares[("d", 8)]["player"] = color
-                if (end_pos[0], int(end_pos[1])) == ("g", 8):
-                    self.squares[("h", 8)]["occupied"] = False
-                    self.squares[("h", 8)]["player"] = False
-                    self.squares[("f", 8)]["occupied"] = "rook"
-                    self.squares[("f", 8)]["player"] = color
-                print("Move completed.")
-                self.turn_count += 1
-                self.visualize()
-                break
-            elif not self.is_legal_castle(current_pos, end_pos, color):
+                elif not self.is_legal_castle(current_pos, end_pos, color):
+                    continue
+            else:
                 continue
 
     # Checks for game end conditions, checkmate or stalemate either due to unavailability of legal moves w/o check or
@@ -1267,7 +1335,7 @@ if __name__ == "__main__":
     x = Game()
 
     try:
-        x.visualize()
+        x.visualize(player="white")
         while True:
             x.move_piece("white")
             end = x.end("white")
