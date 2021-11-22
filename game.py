@@ -34,10 +34,7 @@ class Game:
         # Create diagonals slanting from bottom left to top right
         #  k=0 corresponds to a8.
 
-        self.black_king = (
-            "e",
-            8,
-        )
+        self.black_king = ("e",8)
         # Property to record the location of black king. Used by is_threat to determine if
         # black is in check.
         self.white_king = ("e", 1)
