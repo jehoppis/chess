@@ -25,16 +25,12 @@ class Game:
         )  # This dictionary is the meat of the class. It will contain info about what piece is on
         # a given square, who the piece belongs to, what diagonals the square belongs to, etc.
 
-        self.diagonals_top_left_bottom_right = dict(
-            {k: [] for k in range(15)}
-        )
+        self.diagonals_top_left_bottom_right = dict({k: [] for k in range(15)})
         # Create diagonals slanting from top
         # left to bottom k=0 corresponds to a1.
         # Diagonals are used by is_legal to determine legality of moves for bishops and queens.
 
-        self.diagonals_bottom_left_top_right = dict(
-            {n: [] for n in range(15)}
-        )
+        self.diagonals_bottom_left_top_right = dict({n: [] for n in range(15)})
         # Create diagonals slanting from bottom left to top right
         #  k=0 corresponds to a8.
 
@@ -214,15 +210,13 @@ class Game:
                             and int(end_pos[1]) == 4
                         ):
                             return True
-                    if (
+                    return bool(
                         int(current_pos[1]) + 1 == int(end_pos[1])
                         and not self.squares[(current_pos[0], int(end_pos[1]))][
                             "occupied"
                         ]
-                    ):
-                        return True
-                    return False
-                elif (
+                    )
+                if (
                     self.squares[(current_pos[0], int(current_pos[1]))]["player"]
                     == "black"
                 ):
@@ -233,15 +227,13 @@ class Game:
                             and int(end_pos[1]) == 5
                         ):
                             return True
-                    if (
+                    return bool(
                         int(current_pos[1]) - 1 == int(end_pos[1])
                         and not self.squares[(current_pos[0], int(end_pos[1]))][
                             "occupied"
                         ]
-                    ):
-                        return True
-                    else:
-                        return False
+                    )
+                return False
             if current_pos[0] != end_pos[0]:
                 if (
                     self.squares[(current_pos[0], int(current_pos[1]))]["player"]
@@ -253,13 +245,13 @@ class Game:
                         and self.squares[(end_pos[0], int(end_pos[1]))]["occupied"]
                     ):
                         return True
-                    elif (
+                    if (
                         cur_col_index - 1 == end_col_index
                         and int(current_pos[1]) + 1 == int(end_pos[1])
                         and self.squares[(end_pos[0], int(end_pos[1]))]["occupied"]
                     ):
                         return True
-                    elif (
+                    if (
                         cur_col_index + 1 == end_col_index
                         and int(current_pos[1]) + 1 == int(end_pos[1])
                         and int(current_pos[1]) == 5
@@ -268,7 +260,7 @@ class Game:
                             "en passant"
                         ] == [self.turn_count, self.columns[end_col_index]]:
                             return True
-                    elif (
+                    if (
                         cur_col_index - 1 == end_col_index
                         and int(current_pos[1]) + 1 == int(end_pos[1])
                         and int(current_pos[1]) == 5
@@ -277,9 +269,8 @@ class Game:
                             "en passant"
                         ] == [self.turn_count, self.columns[end_col_index]]:
                             return True
-                    else:
-                        return False
-                elif (
+                    return False
+                if (
                     self.squares[(current_pos[0], int(current_pos[1]))]["player"]
                     == "black"
                 ):
@@ -289,13 +280,13 @@ class Game:
                         and self.squares[(end_pos[0], int(end_pos[1]))]["occupied"]
                     ):
                         return True
-                    elif (
+                    if (
                         cur_col_index - 1 == end_col_index
                         and int(current_pos[1]) - 1 == int(end_pos[1])
                         and self.squares[(end_pos[0], int(end_pos[1]))]["occupied"]
                     ):
                         return True
-                    elif (
+                    if (
                         cur_col_index + 1 == end_col_index
                         and int(current_pos[1]) - 1 == int(end_pos[1])
                         and int(current_pos[1]) == 4
@@ -304,7 +295,7 @@ class Game:
                             "en passant"
                         ] == [self.turn_count, self.columns[end_col_index]]:
                             return True
-                    elif (
+                    if (
                         cur_col_index - 1 == end_col_index
                         and int(current_pos[1]) - 1 == int(end_pos[1])
                         and int(current_pos[1]) == 4
@@ -313,101 +304,78 @@ class Game:
                             "en passant"
                         ] == [self.turn_count, self.columns[end_col_index]]:
                             return True
-                    else:
-                        return False
+                    return False
+                return False
+        # Knight rules
+        if self.squares[(current_pos[0], int(current_pos[1]))]["occupied"] == "knight":
+            return (
+                any(
+                    [
+                        (
+                            int(current_pos[1]) + 2 == int(end_pos[1])
+                            and (
+                                end_col_index in [cur_col_index + 1, cur_col_index - 1]
+                            )
+                        ),
+                        (
+                            int(current_pos[1]) - 2 == int(end_pos[1])
+                            and (
+                                end_col_index in [cur_col_index + 1, cur_col_index - 1]
+                            )
+                        ),
+                        (
+                            cur_col_index - 2 == end_col_index
+                            and (
+                                int(end_pos[1])
+                                in [int(current_pos[1]) + 1, int(current_pos[1]) - 1]
+                            )
+                        ),
+                        (
+                            cur_col_index + 2 == end_col_index
+                            and (
+                                int(end_pos[1])
+                                in [int(current_pos[1]) + 1, int(current_pos[1]) - 1]
+                            )
+                        ),
+                    ]
+                )
+                and (self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color)
+            )
         # Rook rules
         if self.squares[(current_pos[0], int(current_pos[1]))]["occupied"] == "rook":
             if current_pos[0] != end_pos[0] and current_pos[1] != end_pos[1]:
                 return False
-            else:
-                spaces_are_empty = True
-                if current_pos[0] == end_pos[0]:
-                    if int(current_pos[1]) < int(end_pos[1]):
-                        for i in range(int(current_pos[1]) + 1, int(end_pos[1])):
-                            if self.squares[(current_pos[0], i)]["occupied"]:
-                                spaces_are_empty = False
-                    elif int(current_pos[1]) > int(end_pos[1]):
-                        for i in range(int(current_pos[1]) - 1, int(end_pos[1]), -1):
-                            if self.squares[(current_pos[0], i)]["occupied"]:
-                                spaces_are_empty = False
-                    if (
-                        spaces_are_empty
-                        and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
-                        != color
-                    ):
-                        return True
-                    elif not (
-                        spaces_are_empty
-                        and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
-                        != color
-                    ):
-                        return False
-                else:
-                    if cur_col_index < end_col_index:
-                        for i in range(cur_col_index + 1, end_col_index):
-                            if self.squares[(self.columns[i], int(current_pos[1]))][
-                                "occupied"
-                            ]:
-                                spaces_are_empty = False
-                    elif cur_col_index > end_col_index:
-                        for i in range(cur_col_index - 1, end_col_index, -1):
-                            if self.squares[(self.columns[i], int(current_pos[1]))][
-                                "occupied"
-                            ]:
-                                spaces_are_empty = False
-                    if (
-                        spaces_are_empty
-                        and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
-                        != color
-                    ):
-                        return True
-                    elif not (
-                        spaces_are_empty
-                        and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
-                        != color
-                    ):
-                        return False
-        # Knight rules
-        if (
-            self.squares[(current_pos[0], int(current_pos[1]))]["occupied"] == "knight"
-        ):
-            if (
-                (
-                    int(current_pos[1]) + 2 == int(end_pos[1])
-                    and (
-                        cur_col_index + 1 == end_col_index
-                        or cur_col_index - 1 == end_col_index
-                    )
+
+            spaces_are_empty = True
+            if current_pos[0] == end_pos[0]:
+                if int(current_pos[1]) < int(end_pos[1]):
+                    for i in range(int(current_pos[1]) + 1, int(end_pos[1])):
+                        if self.squares[(current_pos[0], i)]["occupied"]:
+                            spaces_are_empty = False
+                elif int(current_pos[1]) > int(end_pos[1]):
+                    for i in range(int(current_pos[1]) - 1, int(end_pos[1]), -1):
+                        if self.squares[(current_pos[0], i)]["occupied"]:
+                            spaces_are_empty = False
+                return bool(
+                    spaces_are_empty
+                    and self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color
                 )
-                or (
-                    int(current_pos[1]) - 2 == int(end_pos[1])
-                    and (
-                        cur_col_index + 1 == end_col_index
-                        or cur_col_index - 1 == end_col_index
-                    )
-                )
-                or (
-                    cur_col_index - 2 == end_col_index
-                    and (
-                        int(current_pos[1]) + 1 == int(end_pos[1])
-                        or int(current_pos[1]) - 1 == int(end_pos[1])
-                    )
-                )
-                or (
-                    cur_col_index + 2 == end_col_index
-                    and (
-                        int(current_pos[1]) + 1 == int(end_pos[1])
-                        or int(current_pos[1]) - 1 == int(end_pos[1])
-                    )
-                )
-            ) and self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color:
-                return True
-            else:
-                return False
+
+            if cur_col_index < end_col_index:
+                for i in range(cur_col_index + 1, end_col_index):
+                    if self.squares[(self.columns[i], int(current_pos[1]))]["occupied"]:
+                        spaces_are_empty = False
+            elif cur_col_index > end_col_index:
+                for i in range(cur_col_index - 1, end_col_index, -1):
+                    if self.squares[(self.columns[i], int(current_pos[1]))]["occupied"]:
+                        spaces_are_empty = False
+            return bool(
+                spaces_are_empty
+                and self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color
+            )
+
         # Bishop rules
-        if (
-            self.squares[(current_pos[0], int(current_pos[1]))]["occupied"] == "bishop"
-        ):
+        if self.squares[(current_pos[0], int(current_pos[1]))]["occupied"] == "bishop":
             spaces_are_empty = True
             if (
                 self.squares[(current_pos[0], int(current_pos[1]))]["TLBR"]
@@ -429,15 +397,12 @@ class Game:
                             ][i]
                         ]["occupied"]:
                             spaces_are_empty = False
-                    if (
+                    return bool(
                         spaces_are_empty
                         and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                         != color
-                    ):
-                        return True
-                    else:
-                        return False
-                elif cur_diag_index > end_diag_index:
+                    )
+                if cur_diag_index > end_diag_index:
                     for i in range(cur_diag_index - 1, end_diag_index, -1):
                         if self.squares[
                             self.diagonals_top_left_bottom_right[
@@ -447,14 +412,11 @@ class Game:
                             ][i]
                         ]["occupied"]:
                             spaces_are_empty = False
-                    if (
+                    return bool(
                         spaces_are_empty
                         and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                         != color
-                    ):
-                        return True
-                    else:
-                        return False
+                    )
             elif (
                 self.squares[(current_pos[0], int(current_pos[1]))]["BLTR"]
                 == self.squares[(end_pos[0], int(end_pos[1]))]["BLTR"]
@@ -475,15 +437,12 @@ class Game:
                             ][i]
                         ]["occupied"]:
                             spaces_are_empty = False
-                    if (
+                    return bool(
                         spaces_are_empty
                         and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                         != color
-                    ):
-                        return True
-                    else:
-                        return False
-                elif cur_diag_index > end_diag_index:
+                    )
+                if cur_diag_index > end_diag_index:
                     for i in range(cur_diag_index - 1, end_diag_index, -1):
                         if self.squares[
                             self.diagonals_bottom_left_top_right[
@@ -493,14 +452,12 @@ class Game:
                             ][i]
                         ]["occupied"]:
                             spaces_are_empty = False
-                    if (
+                    return bool(
                         spaces_are_empty
                         and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                         != color
-                    ):
-                        return True
-                    else:
-                        return False
+                    )
+            return False
         # Queen rules
         if self.squares[(current_pos[0], int(current_pos[1]))]["occupied"] == "queen":
             # Copy of rook movement
@@ -514,17 +471,11 @@ class Game:
                     for i in range(int(current_pos[1]) - 1, int(end_pos[1]), -1):
                         if self.squares[(current_pos[0], i)]["occupied"]:
                             spaces_are_empty = False
-                if (
+                return bool(
                     spaces_are_empty
                     and self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color
-                ):
-                    return True
-                elif not (
-                    spaces_are_empty
-                    and self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color
-                ):
-                    return False
-            elif int(current_pos[1]) == int(end_pos[1]):
+                )
+            if int(current_pos[1]) == int(end_pos[1]):
                 if cur_col_index < end_col_index:
                     for i in range(cur_col_index + 1, end_col_index):
                         if self.squares[(self.columns[i], int(current_pos[1]))][
@@ -537,18 +488,12 @@ class Game:
                             "occupied"
                         ]:
                             spaces_are_empty = False
-                if (
+                return bool(
                     spaces_are_empty
                     and self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color
-                ):
-                    return True
-                elif not (
-                    spaces_are_empty
-                    and self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color
-                ):
-                    return False
+                )
             # Copy of Bishop movement
-            elif (
+            if (
                 self.squares[(current_pos[0], int(current_pos[1]))]["TLBR"]
                 == self.squares[(end_pos[0], int(end_pos[1]))]["TLBR"]
             ):
@@ -568,15 +513,12 @@ class Game:
                             ][i]
                         ]["occupied"]:
                             spaces_are_empty = False
-                    if (
+                    return bool(
                         spaces_are_empty
                         and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                         != color
-                    ):
-                        return True
-                    else:
-                        return False
-                elif cur_diag_index > end_diag_index:
+                    )
+                if cur_diag_index > end_diag_index:
                     for i in range(cur_diag_index - 1, end_diag_index, -1):
                         if self.squares[
                             self.diagonals_top_left_bottom_right[
@@ -586,15 +528,12 @@ class Game:
                             ][i]
                         ]["occupied"]:
                             spaces_are_empty = False
-                    if (
+                    return bool(
                         spaces_are_empty
                         and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                         != color
-                    ):
-                        return True
-                    else:
-                        return False
-            elif (
+                    )
+            if (
                 self.squares[(current_pos[0], int(current_pos[1]))]["BLTR"]
                 == self.squares[(end_pos[0], int(end_pos[1]))]["BLTR"]
             ):
@@ -614,15 +553,12 @@ class Game:
                             ][i]
                         ]["occupied"]:
                             spaces_are_empty = False
-                    if (
+                    return bool(
                         spaces_are_empty
                         and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                         != color
-                    ):
-                        return True
-                    else:
-                        return False
-                elif cur_diag_index > end_diag_index:
+                    )
+                if cur_diag_index > end_diag_index:
                     for i in range(cur_diag_index - 1, end_diag_index, -1):
                         if self.squares[
                             self.diagonals_bottom_left_top_right[
@@ -632,17 +568,15 @@ class Game:
                             ][i]
                         ]["occupied"]:
                             spaces_are_empty = False
-                    if (
+                    return bool(
                         spaces_are_empty
                         and self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                         != color
-                    ):
-                        return True
-                    else:
-                        return False
+                    )
+            return False
         # King rules
         if self.squares[(current_pos[0], int(current_pos[1]))]["occupied"] == "king":
-            if (
+            return bool(
                 end_col_index in [cur_col_index - 1, cur_col_index, cur_col_index + 1]
                 and int(end_pos[1])
                 in [
@@ -651,10 +585,8 @@ class Game:
                     int(current_pos[1]) + 1,
                 ]
                 and self.squares[(end_pos[0], int(end_pos[1]))]["player"] != color
-            ):
-                return True
-            else:
-                return False
+            )
+        return False
 
     # Again assumes current_pos and end_pos are in the right format.
     # Determines if the given move will put player 'color' in check.
@@ -670,8 +602,11 @@ class Game:
             and color == "black"
         ):
             self.black_king = (end_pos[0], int(end_pos[1]))
-        temp = self.squares[(end_pos[0], int(end_pos[1]))]["occupied"]
-        temp2 = self.squares[(end_pos[0], int(end_pos[1]))]["player"]
+        # Save status of square that will be moved into, then make the move,
+        # and then see if the other color can make a move that would take
+        # the king. Finally, move the pieces back and return result.
+        save_piece = self.squares[(end_pos[0], int(end_pos[1]))]["occupied"]
+        save_player = self.squares[(end_pos[0], int(end_pos[1]))]["player"]
         self.squares[(end_pos[0], int(end_pos[1]))]["occupied"] = self.squares[
             (current_pos[0], int(current_pos[1]))
         ]["occupied"]
@@ -693,10 +628,10 @@ class Game:
                             ] = self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                             self.squares[(end_pos[0], int(end_pos[1]))][
                                 "occupied"
-                            ] = temp
+                            ] = save_piece
                             self.squares[(end_pos[0], int(end_pos[1]))][
                                 "player"
-                            ] = temp2
+                            ] = save_player
                             if (
                                 self.squares[(current_pos[0], int(current_pos[1]))][
                                     "occupied"
@@ -711,8 +646,8 @@ class Game:
             self.squares[(current_pos[0], int(current_pos[1]))][
                 "player"
             ] = self.squares[(end_pos[0], int(end_pos[1]))]["player"]
-            self.squares[(end_pos[0], int(end_pos[1]))]["occupied"] = temp
-            self.squares[(end_pos[0], int(end_pos[1]))]["player"] = temp2
+            self.squares[(end_pos[0], int(end_pos[1]))]["occupied"] = save_piece
+            self.squares[(end_pos[0], int(end_pos[1]))]["player"] = save_player
             if (
                 self.squares[(current_pos[0], int(current_pos[1]))]["occupied"]
                 == "king"
@@ -720,7 +655,7 @@ class Game:
                 self.white_king = (current_pos[0], int(current_pos[1]))
             return False, -1, -1
         # ------------------------
-        elif color == "black":
+        if color == "black":
             for i in self.rows:
                 for j in self.columns:
                     if self.squares[(j, i)]["player"] == "white":
@@ -733,10 +668,10 @@ class Game:
                             ] = self.squares[(end_pos[0], int(end_pos[1]))]["player"]
                             self.squares[(end_pos[0], int(end_pos[1]))][
                                 "occupied"
-                            ] = temp
+                            ] = save_piece
                             self.squares[(end_pos[0], int(end_pos[1]))][
                                 "player"
-                            ] = temp2
+                            ] = save_player
                             if (
                                 self.squares[(current_pos[0], int(current_pos[1]))][
                                     "occupied"
@@ -751,80 +686,80 @@ class Game:
             self.squares[(current_pos[0], int(current_pos[1]))][
                 "player"
             ] = self.squares[(end_pos[0], int(end_pos[1]))]["player"]
-            self.squares[(end_pos[0], int(end_pos[1]))]["occupied"] = temp
-            self.squares[(end_pos[0], int(end_pos[1]))]["player"] = temp2
+            self.squares[(end_pos[0], int(end_pos[1]))]["occupied"] = save_piece
+            self.squares[(end_pos[0], int(end_pos[1]))]["player"] = save_player
             if (
                 self.squares[(current_pos[0], int(current_pos[1]))]["occupied"]
                 == "king"
             ):
                 self.black_king = (current_pos[0], int(current_pos[1]))
             return False, -1, -1
+        return False, -1, -1
 
     # Again assumes current_pos and end_pos are in the right format.
     # Determines if the given move is a valid castle.
     def is_legal_castle(self, current_pos, end_pos, color):
-        if (
-            color == "white"
-            and (end_pos[0], int(end_pos[1])) in [("c", 1), ("g", 1)]
-            and (current_pos[0], int(current_pos[1])) == ("e", 1)
+        if all(
+            [
+                color == "white",
+                (end_pos[0], int(end_pos[1])) in [("c", 1), ("g", 1)],
+                (current_pos[0], int(current_pos[1])) == ("e", 1),
+            ]
         ):
-            temp = self.is_threat(current_pos, current_pos, color)
             if (
                 self.squares[(current_pos[0], int(current_pos[1]))]["castle"]
-                and not temp[0]
+                and not self.is_threat(current_pos, current_pos, color)[0]
             ):
                 if end_pos[0] == "c" and not self.squares[("b", 1)]["occupied"]:
                     if self.squares[("a", 1)]["castle"]:
-                        temp2 = True
                         for i in ["c", "d"]:
-                            temp3 = self.is_threat(current_pos, (i, 1), "white")
-                            if not (
-                                not self.squares[(i, 1)]["occupied"] and not temp3[0]
+                            if (
+                                self.squares[(i, 1)]["occupied"]
+                                or self.is_threat(current_pos, (i, 1), "white")[0]
                             ):
-                                temp2 = False
-                        return temp2
-                elif end_pos[0] == "g":
+                                return False
+                        return True
+                if end_pos[0] == "g":
                     if self.squares[("h", 1)]["castle"]:
-                        temp2 = True
                         for i in ["f", "g"]:
-                            temp3 = self.is_threat(current_pos, (i, 1), "white")
-                            if not (
-                                not self.squares[(i, 1)]["occupied"] and not temp3[0]
+                            if (
+                                self.squares[(i, 1)]["occupied"]
+                                or self.is_threat(current_pos, (i, 1), "white")[0]
                             ):
-                                temp2 = False
-                        return temp2
-        elif (
-            color == "black"
-            and (end_pos[0], int(end_pos[1])) in [("c", 8), ("g", 8)]
-            and (current_pos[0], int(current_pos[1])) == ("e", 8)
+                                return False
+                        return True
+            return False
+        if all(
+            [
+                color == "black",
+                (end_pos[0], int(end_pos[1])) in [("c", 8), ("g", 8)],
+                (current_pos[0], int(current_pos[1])) == ("e", 8),
+            ]
         ):
-            temp = self.is_threat(current_pos, current_pos, color)
             if (
                 self.squares[(current_pos[0], int(current_pos[1]))]["castle"]
-                and not temp[0]
+                and not self.is_threat(current_pos, current_pos, color)[0]
             ):
                 if end_pos[0] == "c" and not self.squares[("b", 8)]["occupied"]:
                     if self.squares[("a", 8)]["castle"]:
-                        temp2 = True
                         for i in ["c", "d"]:
-                            temp3 = self.is_threat(current_pos, (i, 8), "white")
-                            if not (
-                                not self.squares[(i, 8)]["occupied"] and not temp3[0]
+                            if (
+                                self.squares[(i, 8)]["occupied"]
+                                or self.is_threat(current_pos, (i, 8), "white")[0]
                             ):
-                                temp2 = False
-                        return temp2
-                elif end_pos[0] == "g":
+                                return False
+                        return True
+                if end_pos[0] == "g":
                     if self.squares[("h", 8)]["castle"]:
-                        temp2 = True
                         for i in ["f", "g"]:
-                            temp3 = self.is_threat(current_pos, (i, 8), "white")
-                            if not (
-                                not self.squares[(i, 8)]["occupied"] and not temp3[0]
+                            if (
+                                self.squares[(i, 8)]["occupied"]
+                                or self.is_threat(current_pos, (i, 8), "white")[0]
                             ):
-                                temp2 = False
-                        return temp2
-        else:
+                                return False
+                        return True
             return False
+        return False
 
     # First asks user to input a square to move from.
     # Checks to see if the input is in the correct format and that the
@@ -850,7 +785,7 @@ class Game:
                     )
                     continue
                 if (
-                    type(current_pos) == str
+                    isinstance(current_pos, str)
                     and len(current_pos) == 2
                     and current_pos[0] in self.columns
                     and int(current_pos[1]) in self.rows
@@ -859,13 +794,13 @@ class Game:
                 ):
                     print("Input received.")
                     break
-                elif True:
-                    print(
-                        "You either typed something that wasn't a square, that square is\n"
-                        + "unoccupied, or you do not own that piece."
-                    )
-                    x.visualize(color)
-                    continue
+
+                print(
+                    "You either typed something that wasn't a square, that square is\n"
+                    + "unoccupied, or you do not own that piece."
+                )
+                x.visualize(color)
+                continue
             while True:
                 end_pos = input(
                     "Where would you like to move your "
@@ -883,10 +818,10 @@ class Game:
                         + "Example: 'c3'. If you want to select a different piece, type 'back'."
                     )
                     continue
-                elif end_pos == "back":
+                if end_pos == "back":
                     break
-                elif not (
-                    type(end_pos) == str
+                if not (
+                    isinstance(end_pos, str)
                     and len(end_pos) == 2
                     and end_pos[0] in self.columns
                     and int(end_pos[1]) in self.rows
@@ -894,8 +829,8 @@ class Game:
                     print("You typed something that wasn't a valid square.")
                     self.visualize(color)
                     continue
-                elif (
-                    type(end_pos) == str
+                if (
+                    isinstance(end_pos, str)
                     and len(end_pos) == 2
                     and end_pos[0] in self.columns
                     and int(end_pos[1]) in self.rows
@@ -905,8 +840,8 @@ class Game:
                     )
                 ):
                     break
-                elif (
-                    type(end_pos) == str
+                if (
+                    isinstance(end_pos, str)
                     and len(end_pos) == 2
                     and end_pos[0] in self.columns
                     and int(end_pos[1]) in self.rows
@@ -918,10 +853,10 @@ class Game:
                     break
 
             if self.is_legal(current_pos, end_pos, color):
-                temp = self.is_threat(current_pos, end_pos, color)
-                if temp[0]:
-                    i = temp[1]
-                    j = temp[2]
+                is_threat_temp = self.is_threat(current_pos, end_pos, color)
+                if is_threat_temp[0]:
+                    i = is_threat_temp[1]
+                    j = is_threat_temp[2]
                     print(
                         "That move would place white in check from "
                         + str(self.squares[(j, i)]["occupied"])
@@ -930,7 +865,7 @@ class Game:
                         + str(i)
                         + "."
                     )
-                elif not temp[0]:
+                else:
                     cur_col_index = self.columns.index(current_pos[0])
                     end_col_index = self.columns.index(end_pos[0])
                     if (
@@ -1070,11 +1005,11 @@ class Game:
                             if promo not in ["queen", "rook", "knight", "bishop"]:
                                 print("Invalid selection. Try again.")
                                 continue
-                            else:
-                                self.squares[(end_pos[0], int(end_pos[1]))][
-                                    "occupied"
-                                ] = promo
-                                break
+
+                            self.squares[(end_pos[0], int(end_pos[1]))][
+                                "occupied"
+                            ] = promo
+                            break
                     if color == "white":
                         self.visualize(player="black")
                     else:
@@ -1139,53 +1074,69 @@ class Game:
         in_check = False
         is_fifty = self.turn_count - self.fifty
         if color == "white":
-            for i in self.rows:
-                for j in self.columns:
-                    if self.squares[(j, i)]["player"] == "white":
-                        if self.is_legal((j, i), self.black_king, "white"):
-                            in_check = True
-                    if self.squares[(j, i)]["player"] == "black":
-                        for m in self.rows:
-                            for n in self.columns:
-                                if self.squares[(n, m)]["player"] != "black":
-                                    if self.is_legal((j, i), (n, m), "black"):
+            for cur_row in self.rows:
+                for cur_col in self.columns:
+                    if self.squares[(cur_col, cur_row)]["player"] == "white":
+                        in_check = self.is_legal(
+                            (cur_col, cur_row), self.black_king, "white"
+                        )
+                    if self.squares[(cur_col, cur_row)]["player"] == "black":
+                        for end_row in self.rows:
+                            for end_col in self.columns:
+                                if (
+                                    self.squares[(end_col, end_row)]["player"]
+                                    != "black"
+                                ):
+                                    if self.is_legal(
+                                        (cur_col, cur_row), (end_col, end_row), "black"
+                                    ):
                                         if (
-                                            not self.is_threat((j, i), (n, m), "black")[
-                                                0
-                                            ]
+                                            not self.is_threat(
+                                                (cur_col, cur_row),
+                                                (end_col, end_row),
+                                                "black",
+                                            )[0]
                                             and is_fifty < 101
                                         ):
                                             return False
             if in_check and is_fifty < 101:
                 return "checkmate"
-            elif not in_check and is_fifty < 101:
+            if not in_check and is_fifty < 101:
                 return "stalemate"
-            elif is_fifty >= 101:
+            if is_fifty >= 101:
                 return "stalemate"
         elif color == "black":
-            for i in self.rows:
-                for j in self.columns:
-                    if self.squares[(j, i)]["player"] == "black":
-                        if self.is_legal((j, i), self.white_king, "black"):
+            for cur_row in self.rows:
+                for cur_col in self.columns:
+                    if self.squares[(cur_col, cur_row)]["player"] == "black":
+                        if self.is_legal((cur_col, cur_row), self.white_king, "black"):
                             in_check = True
-                    if self.squares[(j, i)]["player"] == "white":
-                        for m in self.rows:
-                            for n in self.columns:
-                                if self.squares[(n, m)]["player"] != "white":
-                                    if self.is_legal((j, i), (n, m), "white"):
+                    if self.squares[(cur_col, cur_row)]["player"] == "white":
+                        for end_row in self.rows:
+                            for end_col in self.columns:
+                                if (
+                                    self.squares[(end_col, end_row)]["player"]
+                                    != "white"
+                                ):
+                                    if self.is_legal(
+                                        (cur_col, cur_row), (end_col, end_row), "white"
+                                    ):
                                         if (
-                                            not self.is_threat((j, i), (n, m), "white")[
-                                                0
-                                            ]
+                                            not self.is_threat(
+                                                (cur_col, cur_row),
+                                                (end_col, end_row),
+                                                "white",
+                                            )[0]
                                             and is_fifty < 101
                                         ):
                                             return False
             if in_check and is_fifty < 101:
                 return "checkmate"
-            elif not in_check and is_fifty < 101:
+            if not in_check and is_fifty < 101:
                 return "stalemate"
-            elif is_fifty >= 101:
+            if is_fifty >= 101:
                 return "stalemate"
+        return False
 
 
 if __name__ == "__main__":
@@ -1199,18 +1150,18 @@ if __name__ == "__main__":
             if end == "checkmate":
                 print("White wins the game!")
                 break
-            elif end == "stalemate":
+            if end == "stalemate":
                 print("The game is a draw.")
                 break
-            temp = x.is_threat(x.black_king, x.black_king, "black")
-            if temp[0]:
+            black_threat = x.is_threat(x.black_king, x.black_king, "black")
+            if black_threat[0]:
                 print(
                     "Black is in check from "
                     + str(
-                        x.squares[(temp[2], temp[1])]["occupied"]
+                        x.squares[(black_threat[2], black_threat[1])]["occupied"]
                         + " located at "
-                        + str(temp[2])
-                        + str(temp[1])
+                        + str(black_threat[2])
+                        + str(black_threat[1])
                         + "."
                     )
                 )
@@ -1219,18 +1170,18 @@ if __name__ == "__main__":
             if end == "checkmate":
                 print("Black wins the game!")
                 break
-            elif end == "stalemate":
+            if end == "stalemate":
                 print("The game is a draw.")
                 break
-            temp = x.is_threat(x.white_king, x.white_king, "white")
-            if temp[0]:
+            white_threat = x.is_threat(x.white_king, x.white_king, "white")
+            if white_threat[0]:
                 print(
                     "White is in check from "
                     + str(
-                        x.squares[(temp[2], temp[1])]["occupied"]
+                        x.squares[(white_threat[2], white_threat[1])]["occupied"]
                         + " located at "
-                        + str(temp[2])
-                        + str(temp[1])
+                        + str(white_threat[2])
+                        + str(white_threat[1])
                         + "."
                     )
                 )
